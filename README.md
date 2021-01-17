@@ -5,8 +5,11 @@ open and close Opsgenie incidents from the command line. These scripts are
 designed to help you integrate monit with Opsgenie.
 
 This is based off of
-* [opsgenie-monit](https://github.com/pinterest/opsgenie-monit)
-* [opsgenie-monit](https://github.com/etheriau/opsgenie-monit)
+* [pinterest/pagerduty\-monit: Wrapper scripts to integrate monit and PagerDuty\.](https://github.com/pinterest/pagerduty-monit)
+* [etheriau/opsgenie\-monit](https://github.com/etheriau/opsgenie-monit)
+
+Opsgenie API more info
+* [Alert API](https://docs.opsgenie.com/docs/alert-api)
 
 **Usage:** `opsgenie-trigger`
 
