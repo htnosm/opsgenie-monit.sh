@@ -40,7 +40,6 @@ $CURL -XPOST "$URL/$INCIDENT_KEY/close?identifierType=alias" \
         "source": "monit"
     }'
 
-
 if [ "$?" -ne "0" ]; then
   echo "Failed to resolve incident"
   exit 1
