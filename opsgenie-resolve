@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# opsgenie-resolve is a wrapper around the Opsgenie API to
+# close an incident from the command line. 
+#
+# Uncomment and enter your service key here.
+# OPSGENIE_API_KEY="1234567890abcdef1234567890abcdef"
+
+URL="https://api.opsgenie.com/v2/alerts"
+SERVICE="${1:-${MONIT_SERVICE}}"
+EVENT="${2:-${MONIT_EVENT}}"
+
+if [ -z "$SERVICE" ]; then
+  echo "Failed to resolve event: SERVICE not defined."
+  exit 1
+elif [ -z "$OPSGENIE_API_KEY" ]; then
+  echo "Failed to resolve event: you must set the OPSGENIE_API_KEY variable."
+  exit 1
+fi
+CURL=$(which curl)
+if [ $? -ne 0 -o ! -x $CURL ]; then
+  echo "Failed to resolve event: curl does not exist or is not executable."
+  exit 1
+fi
+
+HOST=$(uname -n)
+DESCRIPTION="$SERVICE $EVENT on $HOST"
+
+INCIDENT_KEY=`echo "$HOST:$SERVICE" | md5sum | cut -f 1 -d ' '`
+TMP_FILE="/tmp/opsgenie-$INCIDENT_KEY"
+if [ -f $TMP_FILE ]; then
+  /bin/rm -f $TMP_FILE
+fi
+
+$CURL -XPOST "$URL/$INCIDENT_KEY/close?identifierType=alias" \
+    -H "Content-Type: application/json" \
+    -H "Authorization: GenieKey $OPSGENIE_API_KEY" \
+    -d '{
+        "user": "opsgenie-resolve",
+        "source": "monit"
+    }'
+
+
+if [ "$?" -ne "0" ]; then
+  echo "Failed to resolve incident"
+  exit 1
+fi
+
+echo "Incident resolved successfully"
+exit 0

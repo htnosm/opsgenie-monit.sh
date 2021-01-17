@@ -1,0 +1,57 @@
+#!/bin/bash
+#
+# opsgenie-trigger is a wrapper around the Opsgenie API to
+# open a new incident from the command line. 
+# This script is designed to help integrate monit with Opsgenie.
+#
+# Uncomment and enter your service key here.
+# OPSGENIE_API_KEY="1234567890abcdef1234567890abcdef"
+
+URL="https://api.opsgenie.com/v2/alerts"
+SERVICE="${1:-${MONIT_SERVICE}}"
+EVENT="${2:-${MONIT_EVENT}}"
+
+if [ -z "$SERVICE" ]; then
+  echo "Failed to trigger event: SERVICE not defined."
+  exit 1
+elif [ -z "$OPSGENIE_API_KEY" ]; then
+  echo "Failed to trigger event: you must set the OPSGENIE_API_KEY variable."
+  exit 1
+fi
+CURL=$(which curl)
+if [ $? -ne 0 -o ! -x $CURL ]; then
+  echo "Failed to trigger event: curl does not exist or is not executable."
+  exit 1
+fi
+
+HOST=$(uname -n)
+DESCRIPTION="$SERVICE $EVENT on $HOST"
+
+INCIDENT_KEY=`echo "$HOST:$SERVICE" | md5sum | cut -f 1 -d ' '`
+TMP_FILE="/tmp/opsgenie-$INCIDENT_KEY"
+cat <<_EOF > $TMP_FILE
+{
+    "message": "$DESCRIPTION",
+    "alias": "$INCIDENT_KEY",
+    "details": {
+        "service": "$SERVICE",
+        "event": "$EVENT",
+        "description": "$MONIT_DESCRIPTION",
+        "date": "$MONIT_DATE",
+        "host": "$MONIT_HOST"
+    }
+}
+_EOF
+
+$CURL -XPOST $URL \
+    -H "Content-Type: application/json" \
+    -H "Authorization: GenieKey $OPSGENIE_API_KEY" \
+    -d @$TMP_FILE
+
+if [ "$?" -ne "0" ]; then
+  echo "Failed to trigger incident"
+  exit 1
+fi
+
+echo "Incident triggered successfully"
+exit 0
